@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node",
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -11,6 +12,13 @@
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true
-  }
+    "skipLibCheck": true,
+    "lib": ["es2017"],
+    "paths": {
+      "@todo/*": ["src/todo/*"],
+      "@shared/*": ["src/shared/*"]
+    }
+  },
+  "exclude": ["node_modules"]
+
 }
