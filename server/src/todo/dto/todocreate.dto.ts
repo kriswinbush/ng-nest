@@ -1,4 +1,9 @@
+import { IsNotEmpty, MaxLength } from 'class-validator';
+
 export class TodoCreateDto {
-    name: string;
-    description?: string;
+	@IsNotEmpty()
+	name: string;
+
+	@MaxLength(500)
+	description?: string;
 }

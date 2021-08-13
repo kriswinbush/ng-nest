@@ -16,9 +16,9 @@
     "lib": ["es2017"],
     "paths": {
       "@todo/*": ["src/todo/*"],
-      "@shared/*": ["src/shared/*"]
+      "@shared/*": ["src/shared/*"],
+			"@users/*": ["src/user/*"],
     }
   },
-  "exclude": ["node_modules"]
-
+  "exclude": ["node_modules", "./dist/**/*"]
 }

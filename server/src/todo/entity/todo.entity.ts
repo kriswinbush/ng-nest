@@ -1,11 +1,13 @@
 import { TaskEntity } from '@todo/entity/task.entity';
+import { UserEntity } from 'src/user/entity/user.entity';
 import {
 	Entity,
 	PrimaryGeneratedColumn,
 	Column,
 	CreateDateColumn,
 	OneToMany,
-} from 'TypeORM';
+	ManyToOne,
+} from 'typeorm';
 
 @Entity('todo')
 export class TodoEntity {
@@ -15,5 +17,8 @@ export class TodoEntity {
 	@CreateDateColumn() createOn?: Date;
 	@CreateDateColumn() updatedOn?: Date;
 
+	@ManyToOne(type => UserEntity)
+	 owner?: UserEntity;
+	 
 	@OneToMany((type) => TaskEntity, (task) => task.todo) tasks?: TaskEntity[];
 }

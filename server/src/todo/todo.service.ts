@@ -1,54 +1,106 @@
-import { Logger } from '@nestjs/common';
-import { HttpException, Injectable, HttpStatus } from '@nestjs/common';
+import { HttpException, Injectable, HttpStatus, ConsoleLogger } from '@nestjs/common';
 import { todos } from 'src/mock/todo.mock';
 import { toTodoDto } from 'src/shared/mapper';
 import { toPromise } from 'src/shared/util';
-import { v4 as uuidv4 } from 'uuid';
 import { TodoDto } from './dto/todo.dto';
 import { TodoCreateDto } from './dto/todocreate.dto';
 import { TodoEntity } from '@todo/entity/todo.entity';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserDto } from 'src/user/dto/user.dto';
+import { UserService } from '../user/user.service';
 @Injectable()
 export class TodoService {
 	todos: TodoEntity[] = todos;
 
+	constructor(
+		private readonly userService: UserService,
+		@InjectRepository(TodoEntity)
+		private readonly todoRepo: Repository<TodoEntity>,
+	) {}
+
 	async getOneTodo(id: string): Promise<TodoDto> {
-		const todo = this.todos.find((todo) => todo.id === id);
+		const todo = await this.todoRepo.findOne({
+			where: { id },
+			relations: ['tasks'],
+		});
+
 		if (!todo) {
 			throw new HttpException(
-				`Todo item doesn't exist`,
+				`Todo list doesn't exist`,
 				HttpStatus.BAD_REQUEST,
 			);
 		}
+		return toTodoDto(todo);
+	}
+
+	async createTodo(todoDto: TodoCreateDto, {username}: UserDto): Promise<TodoDto> {
+		const { name, description } = todoDto;
+
+		const owner = await this.userService.findOneUser({where: { username }});
+		const todo: TodoEntity = await this.todoRepo.create({
+			name,
+			description,
+			owner,
+		});
+		await this.todoRepo.save(todo);
 		return toPromise(toTodoDto(todo));
 	}
 
-	async createTodo(todoDto: TodoCreateDto): Promise<TodoDto> {
+	async getAllTodos(): Promise<TodoDto[]> {
+		const todos = await this.todoRepo.find({
+			relations: ['tasks'],
+		});
+		console.log(todos);
+		return todos.map((todo) => toTodoDto(todo));
+	}
+
+	async updateTodo(id: string, todoDto: TodoDto): Promise<TodoDto> {
 		const { name, description } = todoDto;
-		const todo: TodoEntity = {
-			id: uuidv4(),
+		let todo: TodoEntity = await this.todoRepo.findOne({ where: { id } });
+
+		if (!todo) {
+			throw new HttpException(
+				`Todo list doesn't exist`,
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		todo = {
+			id,
 			name,
 			description,
 		};
 
-		this.todos.push(todo);
-		return toPromise(toTodoDto(todo));
-	}
+		await this.todoRepo.update({ id }, todo);
 
-	async getAllTodos(): Promise<TodoEntity[]> {
-		return toPromise(this.todos);
-	}
-
-	async updateTodo(id: string, todoDto: TodoDto): Promise<TodoDto> {
-		const idxOfTodo = this.todos.findIndex((todo) => todo.id === id);
-		this.todos.splice(idxOfTodo, 1, { ...todoDto, id });
-		return toPromise({ ...todoDto, id });
+		todo = await this.todoRepo.findOne({
+			where: { id },
+			relations: ['tasks'],
+		});
+		return toTodoDto(todo);
 	}
 
 	async destroyTodo(id: string): Promise<TodoDto> {
-		const idxOfTodo = this.todos.findIndex((todo) => todo.id === id);
-		const todoDeleted = this.todos.splice(idxOfTodo, 1);
-		Logger.log(todoDeleted);
-		return toPromise(toTodoDto(todoDeleted[0]));
+		const todo: TodoEntity = await this.todoRepo.findOne({
+			where: { id },
+			relations: ['tasks'],
+		});
+
+		if (!todo) {
+			throw new HttpException(
+				`Todo list doesn't exist`,
+				HttpStatus.BAD_REQUEST,
+			);
+		}
+
+		if (todo.tasks && todo.tasks.length > 0) {
+			throw new HttpException(
+				`Cannot delete this Todo list, it has existing tasks`,
+				HttpStatus.FORBIDDEN,
+			);
+		}
+		await this.todoRepo.delete({ id });
+		return toTodoDto(todo);
 	}
 }

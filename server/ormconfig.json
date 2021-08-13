@@ -1,19 +1,17 @@
 {
-    "name": "development",
     "type": "postgres",
     "host": "localhost",
     "port": 5445,
     "username": "todo",
     "password": "password123",
     "database": "todo_db",
-    "synchronize": false,
+    "synchronize": true,
     "logging": true,
-    "entities":
-    ["src/**/*.entity.ts", "dist/**/*.entity.js"], "migrations":
-    ["src/migration/**/*.ts", "dist/migration/**/*.js"], "subscribers":
-    ["src/subscriber/**/*.ts", "dist/subscriber/**/*.js"],
+    "entities": ["dist/**/*.entity.js"], 
+		"migrations": ["src/migration/**/*.{ts, js}"], 
+		"subscribers": ["src/subscriber/**/*.ts"],
     "cli": {
-       "entitiesDir": "src",
+       "entitiesDir": "src/**/*.entity.ts",
        "migrationsDir": "src/migration",
        "subscribersDir": "src/subscriber"
     }
